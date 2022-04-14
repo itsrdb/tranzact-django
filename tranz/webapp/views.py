@@ -102,6 +102,8 @@ class invoicesList(APIView):
 
     def post(self,request):
         # pass
+        # corner case : user 1 access only
+
         payload = request.data
         list1 = payload['product'].split(',')
         total = len(list1)
@@ -129,14 +131,30 @@ class invoicesListSingle(APIView):
         # pass
         # company1 = company.objects.get(id = id)
         # serialzer = companySerializer(company1, data = request.data)
+        User = employees.objects.get(id = 1)
+        company = User.company
+
         try:
             invoices1 = invoices.objects.get(id = id)
-            payload = request.data
-            list1 = payload['product'].split(',')
-            total = len(list1)
-            payload['total'] = total
         except:
             return Response({"error":"invoice does not exist"})
+
+        if invoices1.seller != company and invoices1.buyer != company:
+            return Response({"error":"user not authenticated"})
+
+        payload = request.data
+
+        if 'seller' in payload:
+            return Response({"error":"user not authenticated for updating this field"})
+
+        if 'total' in payload:
+            return Response({"error":"user not authenticated for updating total cost"})
+
+        if 'product' in payload:
+            list1 = payload['product'].split(',')
+            new_total = len(list1)
+            payload['total'] = new_total
+
         serialzer = invoicesSerializer(invoices1, data = payload, partial=True)
         if serialzer.is_valid():
             serialzer.save()
